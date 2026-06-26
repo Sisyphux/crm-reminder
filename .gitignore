@@ -1,0 +1,45 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.spec
+build/
+
+# Database & Data
+data/*.db*
+data/*.bak
+data/backups/
+data/Excel_Backups/
+app/data/
+
+# Build output
+dist/
+客户跟进提醒系统_桌面版.zip
+
+# IDE
+.trae/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Desktop.ini
+Thumbs.db
+$RECYCLE.BIN/
+
+# Logs
+logs/
+_sync_logs/
+*.log
+
+# WorkBuddy
+.workbuddy/
+
+# Temp
+__pycache__/
+.vs/
+.uploads/
