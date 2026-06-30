@@ -9,6 +9,19 @@ from datetime import datetime, timezone
 import uuid
 
 
+# 日历版本号，每次推送更新时递增
+_calendar_seq = 0
+
+def bump_calendar_seq():
+    """递增日历版本号，触发 iOS 重新拉取"""
+    global _calendar_seq
+    _calendar_seq += 1
+    return _calendar_seq
+
+def get_calendar_seq():
+    return _calendar_seq
+
+
 def _fold_line(line, max_len=75):
     """RFC 5545 要求每行不超过 75 个字符，超过需折叠"""
     if len(line) <= max_len:
@@ -44,6 +57,10 @@ def build_icalendar(reminders):
     """
     # DTSTAMP 必须是当前 UTC 时间，iOS 日历强制要求此字段
     now_utc = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    now_utc_dt = datetime.now(timezone.utc)
+
+    # 用当前序列号 + 时间戳确保每次输出不同
+    seq = _calendar_seq
 
     lines = [
         'BEGIN:VCALENDAR',
@@ -51,10 +68,11 @@ def build_icalendar(reminders):
         'PRODID:-//PROMAX CRM//Follow-up Calendar//ZH',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
-        'X-WR-CALNAME:客户跟进提醒',
-        'X-WR-TIMEZONE:America/Chicago',  # 用户 CDT 时区
-        'REFRESH-INTERVAL;VALUE=DURATION:PT6H',  # 建议刷新间隔 6 小时
-        'X-PUBLISHED-TTL:PT6H',
+        f'X-WR-CALNAME:客户跟进提醒 (v{seq})',
+        'X-WR-TIMEZONE:America/Chicago',
+        'REFRESH-INTERVAL;VALUE=DURATION:PT1H',  # 建议刷新间隔 1 小时
+        'X-PUBLISHED-TTL:PT1H',
+        f'LAST-MODIFIED:{now_utc}',
     ]
 
     for r in reminders:
@@ -69,10 +87,11 @@ def build_icalendar(reminders):
         content = r.get('content', '')
         desc = _escape_text(content) if content else '\u8ddf\u8fdb\u63d0\u9192'
 
-        # 每行不超过 75 字符（RFC 5545）
         lines.append('BEGIN:VEVENT')
         lines.append(f'UID:{uid}')
         lines.append(f'DTSTAMP:{now_utc}')
+        lines.append(f'LAST-MODIFIED:{now_utc}')
+        lines.append(f'SEQUENCE:{seq}')
         lines.append(f'DTSTART;VALUE=DATE:{date_ical}')
         lines.append(f'DTEND;VALUE=DATE:{date_ical}')
         lines.append(_fold_line(f'SUMMARY:{customer}'))
